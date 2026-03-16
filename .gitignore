@@ -1,0 +1,8 @@
+browser_profile/
+results_*.json
+.env
+__pycache__/
+*.pyc
+scraper_old.py
+scraper_v2.py
+scraper_v3.py
