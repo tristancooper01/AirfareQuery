@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Results — {{ job.origin }} &rarr; {{ job.destination }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { background: #f0f4f8; }
+    .flight-label { font-weight: 600; color: #003580; }
+    table td, table th { vertical-align: middle; }
+    .date-header { background: #003580; color: white; font-weight: 600; font-size: .85rem; padding: 4px 10px; border-radius: 4px; display: inline-block; margin: 12px 0 4px; }
+  </style>
+</head>
+<body>
+<div class="container py-4" style="max-width: 800px;">
+
+  <div class="d-flex align-items-center mb-4 gap-3">
+    <div style="background:#003580;border-radius:8px;padding:8px 14px;">
+      <span style="color:white;font-size:1.4rem;font-weight:700;">UA</span>
+    </div>
+    <div class="flex-grow-1">
+      <h4 class="mb-0 fw-bold">{{ job.origin }} &rarr; {{ job.destination }}</h4>
+      <small class="text-muted">
+        {{ job.date }}{% if job.return_date %} &rarr; {{ job.return_date }}{% endif %}
+        {% if fare_filter %} &nbsp;·&nbsp; Filtered: <strong>{{ fare_filter }}</strong>{% endif %}
+      </small>
+    </div>
+    <a href="/" class="btn btn-outline-secondary btn-sm">New search</a>
+  </div>
+
+  {% set multi_date = results_by_date | length > 1 %}
+  {% set total = results_by_date | map(attribute='flights') | map('length') | sum %}
+
+  {% if total > 0 %}
+  <p class="text-muted mb-2"><strong>{{ total }}</strong> flight{{ 's' if total != 1 }} found</p>
+
+  {% for group in results_by_date %}
+    {% if group.flights %}
+      {% if multi_date %}
+      <div class="date-header">{{ group.date }}</div>
+      {% endif %}
+      <table class="table table-sm table-hover bg-white rounded shadow-sm {% if not loop.last %}mb-2{% endif %}">
+        {% if loop.first %}
+        <thead class="table-light">
+          <tr>
+            <th>Flight</th>
+            <th>Times</th>
+            <th>Upgrade Classes</th>
+          </tr>
+        </thead>
+        {% endif %}
+        <tbody>
+        {% for r in group.flights %}
+          {% for seg in r.segments %}
+          <tr>
+            <td class="flight-label">{{ seg.flight.split('(')[0].strip() }}</td>
+            <td class="text-muted" style="font-size:.9rem;">
+              {% if seg.depart or seg.arrival %}{{ seg.depart }} &rarr; {{ seg.arrival }}{% endif %}
+            </td>
+            <td>
+              {% for code, avail in seg.classes.items() %}
+                {% if code in upgrade_classes %}
+                  {% if avail > 0 %}
+                  <span class="badge me-1" style="background:#d1f0e0;color:#155724;">{{ code }}: {{ avail }}</span>
+                  {% else %}
+                  <span class="badge me-1 bg-light text-secondary border">{{ code }}: 0</span>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endfor %}
+
+  {% else %}
+  <div class="alert alert-info">
+    {% if fare_filter %}
+      No flights found with {{ fare_filter }} availability.
+    {% else %}
+      No results returned.
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>
